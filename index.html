@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101827" />
+  <meta name="description" content="依照每日體力安排任務，完成工作，也把時間留給自己。" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>行動撲滿</title>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow" id="todayLabel"></p>
+        <h1>行動撲滿</h1>
+      </div>
+      <button class="icon-button" id="settingsButton" aria-label="設定">⚙︎</button>
+    </header>
+
+    <main>
+      <section id="todayView" class="view active">
+        <div class="energy-card">
+          <div class="energy-head">
+            <div>
+              <span class="muted">今日剩餘體力</span>
+              <strong><span id="remainingEnergy">—</span><small> / <span id="initialEnergy">—</span></small></strong>
+            </div>
+            <button class="text-button" id="adjustEnergyButton">調整</button>
+          </div>
+          <div class="energy-track"><div id="energyBar"></div></div>
+          <div class="score-row">
+            <span>今日工作分 <b id="todayWorkScore">0</b></span>
+            <span>本週享樂體力 <b id="weekLeisure">0</b>/30</span>
+          </div>
+        </div>
+
+        <div class="section-heading">
+          <div><p class="eyebrow">依目前體力排列</p><h2>今天做這些</h2></div>
+          <button class="round-button" id="quickAddButton" aria-label="新增任務">＋</button>
+        </div>
+        <div id="todayTasks" class="task-list"></div>
+        <div id="emptyToday" class="empty-state hidden">
+          <div class="empty-icon">✦</div>
+          <h3>今天還沒有安排</h3>
+          <p>先設定體力，或從任務庫新增一件想做的事。</p>
+        </div>
+
+        <button class="settle-button" id="settleButton">
+          <span>今天就到這裡</span><small>把剩餘體力留給自己</small>
+        </button>
+      </section>
+
+      <section id="tasksView" class="view">
+        <div class="section-heading"><div><p class="eyebrow">所有尚未完成的事</p><h2>任務庫</h2></div><button class="round-button" id="addTaskButton">＋</button></div>
+        <div id="taskLibrary" class="task-list"></div>
+      </section>
+
+      <section id="reportView" class="view">
+        <div class="section-heading"><div><p class="eyebrow">你的行動留下了什麼</p><h2>本週成績單</h2></div></div>
+        <div class="report-hero">
+          <span>本週總分</span><strong id="weekTotalScore">0</strong><small id="weekMultiplier">平衡倍率 ×0.80</small>
+        </div>
+        <div class="metric-grid">
+          <article><span>工作分</span><b id="reportWork">0</b></article>
+          <article><span>享樂體力</span><b id="reportLeisure">0</b></article>
+          <article><span>完成</span><b id="reportCompleted">0</b></article>
+          <article><span>放棄</span><b id="reportAbandoned">0</b></article>
+        </div>
+        <h3 class="subheading">每日紀錄</h3>
+        <div id="dailyReports" class="report-list"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="active" data-view="todayView"><span>◉</span>今天</button>
+      <button data-view="tasksView"><span>☷</span>任務</button>
+      <button data-view="reportView"><span>▥</span>成績單</button>
+    </nav>
+  </div>
+
+  <dialog id="energyDialog">
+    <form method="dialog" id="energyForm">
+      <p class="eyebrow">開始今天</p><h2>今天有多少體力？</h2>
+      <output id="energyOutput">60</output>
+      <input id="energyInput" type="range" min="0" max="100" value="60" />
+      <div class="range-labels"><span>完全沒電</span><span>精力充沛</span></div>
+      <button value="confirm" class="primary-button">開始安排</button>
+    </form>
+  </dialog>
+
+  <dialog id="taskDialog">
+    <form method="dialog" id="taskForm">
+      <input id="taskId" type="hidden" />
+      <p class="eyebrow">放進任務庫</p><h2>這件事需要多少力氣？</h2>
+      <label>任務名稱<input id="taskTitle" required maxlength="80" placeholder="例如：閱讀論文" /></label>
+      <label>預估體力<input id="taskEnergy" type="number" required min="1" max="100" value="10" /></label>
+      <label>任務類型<select id="taskPriority"><option value="mandatory">一定要執行</option><option value="deferrable">可以拖延</option><option value="unlimited">可無限推遲</option></select></label>
+      <label id="delayField">還可以拖延幾天<input id="taskDelay" type="number" min="0" max="365" value="3" /></label>
+      <div class="dialog-actions"><button value="cancel" class="secondary-button">取消</button><button value="confirm" class="primary-button">儲存任務</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="adjustDialog">
+    <form method="dialog" id="adjustForm">
+      <p class="eyebrow">重新評估</p><h2>現在還剩多少體力？</h2>
+      <output id="adjustOutput">0</output>
+      <input id="adjustInput" type="range" min="0" max="100" value="0" />
+      <button value="confirm" class="primary-button">重新安排</button>
+    </form>
+  </dialog>
+
+  <dialog id="settleDialog">
+    <form method="dialog" id="settleForm">
+      <p class="eyebrow">主動結算</p><h2>今天的工作到此為止？</h2>
+      <div class="settle-summary"><div><span>工作分</span><b id="settleWork">0</b></div><div><span>收回享樂體力</span><b id="settleLeisure">0</b></div></div>
+      <p class="dialog-copy">確認後，今天不再安排工作。剩下的體力交還給今晚的你。</p>
+      <div class="dialog-actions"><button value="cancel" class="secondary-button">還沒</button><button value="confirm" class="primary-button coral">收工，我要去爽了</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" id="settingsForm">
+      <p class="eyebrow">每日規則</p><h2>設定</h2>
+      <label>每天幾點結算<input id="settlementTime" type="time" value="03:00" /></label>
+      <p class="dialog-copy">跨過這個時間後，下一次開啟會自動封存前一天。只有主動結算能取得享樂體力。</p>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="exportButton">匯出備份</button><button value="confirm" class="primary-button">儲存</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
