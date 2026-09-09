@@ -1,0 +1,11 @@
+{
+  "name":"行動撲滿",
+  "short_name":"行動撲滿",
+  "description":"依照每日體力安排任務，完成工作，也把時間留給自己。",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#09111f",
+  "theme_color":"#101827",
+  "lang":"zh-Hant",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
