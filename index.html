@@ -24,18 +24,24 @@
     <main>
       <section id="todayView" class="view active">
         <div class="energy-card">
-          <div class="energy-head">
-            <div>
-              <span class="muted">今日剩餘體力</span>
-              <strong><span id="remainingEnergy">—</span><small> / <span id="initialEnergy">—</span></small></strong>
+          <div class="energy-main">
+            <div class="energy-head">
+              <div>
+                <span class="muted">今日剩餘體力</span>
+                <strong><span id="remainingEnergy">—</span><small> / <span id="initialEnergy">—</span></small></strong>
+              </div>
+              <button class="text-button" id="adjustEnergyButton">調整</button>
             </div>
-            <button class="text-button" id="adjustEnergyButton">調整</button>
+            <div class="energy-track"><div id="energyBar"></div></div>
+            <div class="score-row">
+              <span>今日工作分 <b id="todayWorkScore">0</b></span>
+              <span>本週享樂體力 <b id="weekLeisure">0</b>/30</span>
+            </div>
+            <p class="companion-line" id="companionLine"></p>
           </div>
-          <div class="energy-track"><div id="energyBar"></div></div>
-          <div class="score-row">
-            <span>今日工作分 <b id="todayWorkScore">0</b></span>
-            <span>本週享樂體力 <b id="weekLeisure">0</b>/30</span>
-          </div>
+          <figure class="companion" id="companion" data-mood="idle">
+            <img id="companionImg" alt="今日狀態" width="220" height="293" decoding="async" />
+          </figure>
         </div>
 
         <div class="section-heading">

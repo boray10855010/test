@@ -3,8 +3,31 @@ const defaultState={tasks:[],sessions:{},settings:{settlementTime:"03:00"}};
 let state=load();
 const $=id=>document.getElementById(id);
 
-function load(){try{return {...defaultState,...JSON.parse(localStorage.getItem(KEY)||"{}")}}catch{return structuredClone(defaultState)}}
-function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+const COMPANION={
+  lazy:"companions/companion-lazy.png",
+  work:"companions/companion-work.png",
+  tired:"companions/companion-tired.png",
+  night:"companions/companion-night.png"
+};
+const DEFEAT_VARIANTS=[
+  "companions/defeat-ko.png",
+  "companions/defeat-shock.png",
+  "companions/defeat-tentacle.png",
+  "companions/defeat-rope-arms.png",
+  "companions/defeat-rope-hang.png"
+];
+const COMPANION_LINE={
+  idle:"先設定今天的體力。",
+  lazy:"才剛開始？…嗯。",
+  work:"還行，別太貪。",
+  tired:"你還要加？她先記一筆。",
+  defeat:"站不太起來了…今天差不多了。",
+  night:"今晚歸你了。"
+};
+
+function load(){try{const raw={...defaultState,...JSON.parse(localStorage.getItem(KEY)||"{}")};raw.settings={...defaultState.settings,...(raw.settings||{})};return raw}catch{return structuredClone(defaultState)}}
+function persist(){localStorage.setItem(KEY,JSON.stringify(state))}
+function save(){persist();render()}
 function uid(){return crypto.randomUUID?.()||Date.now()+Math.random().toString(16).slice(2)}
 function actionDate(now=new Date()){
   const [h,m]=state.settings.settlementTime.split(":").map(Number);
@@ -32,13 +55,32 @@ function weekStart(date=new Date()){const d=new Date(date);const day=(d.getDay()
 function weekSessions(){const start=weekStart();return Object.values(state.sessions).filter(s=>new Date(s.date+"T12:00:00")>=start)}
 function stats(){const ss=weekSessions();const results=ss.flatMap(s=>s.results||[]);const work=results.reduce((n,r)=>n+r.workScore,0);const leisure=ss.reduce((n,s)=>n+(s.leisureEnergy||0),0);const factor=leisure>=30?1:.8+.2*(leisure/30);return{work,leisure,factor,total:(work+.5*leisure)*factor,completed:results.filter(r=>r.result==="completed").length,abandoned:results.filter(r=>r.result==="abandoned").length,ss}}
 function label(type){return{mandatory:"一定要",deferrable:"可拖延",unlimited:"無限推遲"}[type]}
+function spentRatio(s){if(!s||!s.initialEnergy)return 0;return Math.max(0,Math.min(1,(s.initialEnergy-s.remainingEnergy)/s.initialEnergy))}
+function companionMood(s){if(!s)return"idle";if(s.settledAt)return"night";const r=spentRatio(s);if(r>=.8)return"defeat";if(r>=.55)return"tired";if(r>=.25)return"work";return"lazy"}
+function ensureDefeatPick(){const day=actionDate();const pick=state.settings.defeatPick;if(pick&&pick.date===day&&DEFEAT_VARIANTS.includes(pick.src))return pick.src;const src=DEFEAT_VARIANTS[Math.floor(Math.random()*DEFEAT_VARIANTS.length)];state.settings.defeatPick={date:day,src};persist();return src}
+function companionSrc(mood){if(mood==="defeat")return ensureDefeatPick();if(mood==="idle")return COMPANION.lazy;return COMPANION[mood]||COMPANION.work}
+function renderCompanion(s){
+  const mood=companionMood(s);
+  const root=$("companion");const img=$("companionImg");const line=$("companionLine");
+  if(!root||!img||!line)return;
+  root.dataset.mood=mood;
+  document.body.classList.toggle("night",mood==="night");
+  const src=companionSrc(mood);
+  if(img.dataset.src!==src){img.src=src;img.dataset.src=src}
+  img.alt={idle:"待開始",lazy:"懶散",work:"上工",tired:"疲態",defeat:"戰敗",night:"夜晚"}[mood]||"今日狀態";
+  line.textContent=COMPANION_LINE[mood]||"";
+}
 function taskCard(t,library=false){const days=remainingDays(t);return `<article class="task-card"><div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-meta"><span class="tag ${t.priority}">${label(t.priority)}</span><span>${t.energy} 體力</span>${t.priority==="deferrable"?`<span>${days<=0?"今天到期":`剩 ${days} 天`}</span>`:""}</div></div><div class="task-actions">${library?`<button onclick="editTask('${t.id}')" aria-label="編輯">✎</button>`:`<button onclick="resultTask('${t.id}','abandoned')" aria-label="今天放棄">↷</button><button onclick="resultTask('${t.id}','completed')" aria-label="完成">✓</button>`}</div></article>`}
 function render(){
   const date=new Date(actionDate()+"T12:00:00");$("todayLabel").textContent=date.toLocaleDateString("zh-TW",{month:"long",day:"numeric",weekday:"short"});
   const s=todaySession(),st=stats();$("remainingEnergy").textContent=s?.remainingEnergy??"—";$("initialEnergy").textContent=s?.initialEnergy??"—";$("energyBar").style.width=s?`${Math.max(0,s.remainingEnergy/s.initialEnergy*100)||0}%`:"0%";
   $("todayWorkScore").textContent=(s?.results||[]).reduce((n,r)=>n+r.workScore,0).toFixed(1);$("weekLeisure").textContent=st.leisure;
   const planned=plannedTasks();$("todayTasks").innerHTML=planned.map(t=>taskCard(t)).join("");$("emptyToday").classList.toggle("hidden",planned.length>0);
-  $("settleButton").disabled=!s||s.settledAt;$("settleButton").style.opacity=s?.settledAt?.5:1;
+  const settled=!!s?.settledAt;
+  $("settleButton").disabled=!s||settled;$("settleButton").style.opacity=settled?.5:1;
+  const settleTitle=$("settleButton").querySelector("span");const settleSub=$("settleButton").querySelector("small");
+  if(settleTitle&&settleSub){if(settled){settleTitle.textContent="今晚歸你了";settleSub.textContent="今天不再安排工作"}else{settleTitle.textContent="今天就到這裡";settleSub.textContent="把剩餘體力留給自己"}}
+  renderCompanion(s);
   $("taskLibrary").innerHTML=sortedTasks().map(t=>taskCard(t,true)).join("")||`<div class="empty-state"><div class="empty-icon">✦</div><h3>任務庫是空的</h3><p>新增第一件想完成的事。</p></div>`;
   $("weekTotalScore").textContent=st.total.toFixed(1);$("weekMultiplier").textContent=`平衡倍率 ×${st.factor.toFixed(2)}`;$("reportWork").textContent=st.work.toFixed(1);$("reportLeisure").textContent=st.leisure;$("reportCompleted").textContent=st.completed;$("reportAbandoned").textContent=st.abandoned;
   $("dailyReports").innerHTML=[...st.ss].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>{const w=(x.results||[]).reduce((n,r)=>n+r.workScore,0);return `<div class="report-day"><span>${new Date(x.date+"T12:00:00").toLocaleDateString("zh-TW",{month:"numeric",day:"numeric",weekday:"short"})}</span><span>工作 <b>${w.toFixed(1)}</b>　享樂 <b>${x.leisureEnergy||0}</b></span></div>`}).join("")||`<p class="muted">這週還沒有結算紀錄。</p>`;
