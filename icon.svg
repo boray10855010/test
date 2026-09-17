@@ -1,8 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#101827"/>
-  <path d="M122 223c18-70 81-116 160-106 67 9 116 54 126 114l40 22-28 47c-12 42-43 77-88 94v48h-59v-36h-76v36h-59v-62c-39-33-57-91-36-138l20-19Z" fill="#58d6c7"/>
-  <circle cx="334" cy="223" r="13" fill="#101827"/>
-  <path d="M201 169c29-18 64-21 96-11" fill="none" stroke="#101827" stroke-width="20" stroke-linecap="round"/>
-  <circle cx="205" cy="280" r="40" fill="#f5c96a"/>
-  <path d="M205 256v48M181 280h48" stroke="#101827" stroke-width="13" stroke-linecap="round"/>
+  <rect width="512" height="512" rx="112" fill="#0b1422"/>
+  <defs>
+    <linearGradient id="g" x1="80" y1="40" x2="420" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9af0e6"/>
+      <stop offset=".45" stop-color="#58d6c7"/>
+      <stop offset="1" stop-color="#3aa7c4"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="120" y1="0" x2="392" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff806d"/>
+      <stop offset=".5" stop-color="#f5c96a"/>
+      <stop offset="1" stop-color="#58d6c7"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#g)" d="M256 56l46 118 126 28-98 84 30 124L256 338l-104 72 30-124-98-84 126-28Z"/>
+  <path fill="#101827" opacity=".22" d="M256 112l28 74 78 18-60 52 18 76L256 288l-64 44 18-76-60-52 78-18Z"/>
+  <circle cx="256" cy="248" r="28" fill="#eef2f8" opacity=".9"/>
+  <rect x="120" y="412" width="272" height="28" rx="14" fill="#1a2940"/>
+  <rect x="120" y="412" width="168" height="28" rx="14" fill="url(#bar)"/>
 </svg>

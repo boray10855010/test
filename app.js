@@ -1,4 +1,5 @@
 const KEY="action-piggy-v1";
+const ASSET_VERSION="20260917b";
 const defaultState={tasks:[],sessions:{},settings:{settlementTime:"03:00"}};
 let state=load();
 const $=id=>document.getElementById(id);
@@ -58,7 +59,8 @@ function label(type){return{mandatory:"一定要",deferrable:"可拖延",unlimit
 function spentRatio(s){if(!s||!s.initialEnergy)return 0;return Math.max(0,Math.min(1,(s.initialEnergy-s.remainingEnergy)/s.initialEnergy))}
 function companionMood(s){if(!s)return"idle";if(s.settledAt)return"night";const r=spentRatio(s);if(r>=.8)return"defeat";if(r>=.55)return"tired";if(r>=.25)return"work";return"lazy"}
 function ensureDefeatPick(){const day=actionDate();const pick=state.settings.defeatPick;if(pick&&pick.date===day&&DEFEAT_VARIANTS.includes(pick.src))return pick.src;const src=DEFEAT_VARIANTS[Math.floor(Math.random()*DEFEAT_VARIANTS.length)];state.settings.defeatPick={date:day,src};persist();return src}
-function companionSrc(mood){if(mood==="defeat")return ensureDefeatPick();if(mood==="idle")return COMPANION.lazy;return COMPANION[mood]||COMPANION.work}
+function withAssetVersion(src){if(!src)return src;return src+(src.includes("?")?"&":"?")+"v="+ASSET_VERSION}
+function companionSrc(mood){const base=mood==="defeat"?ensureDefeatPick():mood==="idle"?COMPANION.lazy:(COMPANION[mood]||COMPANION.work);return withAssetVersion(base)}
 function renderCompanion(s){
   const mood=companionMood(s);
   const root=$("companion");const img=$("companionImg");const line=$("companionLine");
@@ -105,4 +107,9 @@ $("settingsForm").onsubmit=e=>{if(e.submitter?.value==="confirm"){state.settings
 $("exportButton").onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`行動撲滿-${actionDate()}.json`;a.click();URL.revokeObjectURL(a.href)};
 
 ensureRollover();save();if(!todaySession())$("energyDialog").showModal();
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
+    reg.update();
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!window.__piggyReloaded){window.__piggyReloaded=true;location.reload()}});
+  }).catch(()=>{});
+}
